@@ -165,7 +165,6 @@ impl Iterator for VideofileProcessor {
 
 // Given a video file_path
 // We run inference for each frame then create a new videofile displayingthe predictions
-#[flutter_rust_bridge::frb(dart_async)]
 pub fn predict_videofile(file_path: &str, n: usize) {
     let mut frame_processor = VideofileProcessor::new(file_path);
     let mut prev_bbox = None;
@@ -185,7 +184,6 @@ pub fn predict_videofile(file_path: &str, n: usize) {
 
 // Given a video file_path
 // We run inference for each frame then create a new videofile displayingthe predictions
-#[flutter_rust_bridge::frb(dart_async)]
 pub fn predict_videofile_remotely(file_path: &str, url: &str, n: usize) {
     let mut frame_processor = VideofileProcessor::new(file_path);
     let mut prev_bbox = None;

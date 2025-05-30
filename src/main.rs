@@ -1,4 +1,3 @@
-#![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 // When compiling natively:
@@ -20,7 +19,7 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "BoquilaHUB",
         native_options,
-        Box::new(|cc| Ok(Box::new(eframe_template::TemplateApp::new(cc)))),
+        Box::new(|cc| Ok(Box::new(boquilahub::TemplateApp::new(cc)))),
     )
 }
 

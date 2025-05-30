@@ -614,9 +614,7 @@ impl AI {
 
 pub struct PredImg {
     pub file_path: String,
-    #[frb(non_final)]
     pub list_bbox: Vec<XYXYc>,
-    #[frb(non_final)]
     pub wasprocessed: bool,
 }
 

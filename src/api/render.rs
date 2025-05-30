@@ -101,7 +101,7 @@ const FONT_SCALE: f32 = 36.4;
 const LABEL_PADDING: f32 = FONT_SCALE / 6.13;
 const CHAR_WIDTH: f32= FONT_SCALE / 1.84 ;
 const WHITE: Rgb<u8> = Rgb([255, 255, 255]);
-const FONT_BYTES: &[u8] = include_bytes!("../../../assets//DejaVuSans.ttf");
+const FONT_BYTES: &[u8] = include_bytes!("../../assets//DejaVuSans.ttf");
 
 pub fn draw_bbox_from_file_path(file_path: &str, predictions: &Vec<XYXYc>) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
     let buf = std::fs::read(file_path).unwrap();

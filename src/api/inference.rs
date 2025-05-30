@@ -10,7 +10,6 @@ use ort::{execution_providers::CUDAExecutionProvider, session::Session};
 use std::sync::Mutex;
 
 pub fn init_app() {
-    flutter_rust_bridge::setup_default_user_utils();
     std::fs::create_dir_all("output_feed").unwrap();
     std::fs::create_dir_all("export").unwrap();
 }
