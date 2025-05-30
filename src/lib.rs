@@ -1,3 +1,3 @@
 mod app;
-pub use app::TemplateApp;
+pub use app::MainApp;
 pub mod api;

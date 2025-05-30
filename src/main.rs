@@ -2,8 +2,8 @@
 
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
-fn main() -> eframe::Result {
-    env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
+#[tokio::main]
+async fn main() -> eframe::Result {
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
@@ -19,7 +19,7 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "BoquilaHUB",
         native_options,
-        Box::new(|cc| Ok(Box::new(boquilahub::TemplateApp::new(cc)))),
+        Box::new(|cc| Ok(Box::new(boquilahub::MainApp::new(cc)))),
     )
 }
 
