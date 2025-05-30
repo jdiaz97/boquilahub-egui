@@ -22,7 +22,6 @@ async fn root() -> &'static str {
     "BoquilaHUB Web API!"
 }
 
-#[flutter_rust_bridge::frb(dart_async)]
 #[tokio::main]
 pub async fn run_api() {
     let app: Router = Router::new()
@@ -52,7 +51,7 @@ pub fn detect_bbox_from_buf_remotely(url: String, buffer: Vec<u8>) -> Vec<XYXYc>
     return deserialized;
 }
 
-#[flutter_rust_bridge::frb(dart_async)]
+
 pub fn detect_bbox_remotely(url: String, file_path: &str) -> Vec<XYXYc> {
     let buf = std::fs::read(file_path).unwrap_or(vec![]);
     return detect_bbox_from_buf_remotely(url, buf);
@@ -78,7 +77,6 @@ fn get_ipv4_address() -> Option<String> {
     None
 }
 
-#[flutter_rust_bridge::frb(sync)]
 pub fn get_ip() -> String {
     get_ipv4_address().unwrap()
 }

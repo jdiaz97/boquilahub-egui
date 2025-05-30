@@ -199,13 +199,11 @@ pub async fn write_pred_img_to_file(pred_img: &PredImg) -> io::Result<()> {
 }
 
 // Count processed images from a list of PredImg structs
-#[flutter_rust_bridge::frb(sync)]
 pub fn count_processed_images(images: &Vec<PredImg>) -> usize {
     images.iter().filter(|img| img.wasprocessed).count()
 }
 
 // Check if all images have empty bounding boxes
-#[flutter_rust_bridge::frb(sync)]
 pub fn are_boxes_empty(images: &Vec<PredImg>) -> bool {
     for image in images {
         if !image.list_bbox.is_empty() {

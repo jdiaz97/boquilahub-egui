@@ -9,7 +9,6 @@ use ort::session::builder::GraphOptimizationLevel;
 use ort::{execution_providers::CUDAExecutionProvider, session::Session};
 use std::sync::Mutex;
 
-#[flutter_rust_bridge::frb(init)]
 pub fn init_app() {
     flutter_rust_bridge::setup_default_user_utils();
     std::fs::create_dir_all("output_feed").unwrap();
@@ -77,7 +76,6 @@ pub fn detect_bbox_from_imgbuf(img: &ImageBuffer<Rgb<u8>, Vec<u8>>) -> Vec<XYXYc
     }
 }
 
-#[flutter_rust_bridge::frb(dart_async)]
 pub fn detect_bbox(file_path: &str) -> Vec<XYXYc> {
     let img = open(file_path).unwrap().into_rgb8();
 

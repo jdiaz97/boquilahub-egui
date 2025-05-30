@@ -612,7 +612,6 @@ impl AI {
     }
 }
 
-#[flutter_rust_bridge::frb]
 pub struct PredImg {
     pub file_path: String,
     #[frb(non_final)]
@@ -706,7 +705,6 @@ pub trait BoundingBoxTraitC<T: BoundingBoxTrait> {
 }
 
 impl BoundingBoxTraitC<XYXY> for XYXYc {
-    #[flutter_rust_bridge::frb(sync)]
     fn new(xyxy: XYXY, label: String) -> Self {
         Self { xyxy, label }
     }
@@ -727,7 +725,6 @@ impl BoundingBoxTraitC<XYXY> for XYXYc {
         self.xyxy.to_xywhnc(w, h, label)
     }
 
-    #[flutter_rust_bridge::frb(sync)]
     fn strlabel(&self) -> String {
         detection_label(&self.label, &self.xyxy.prob)
     }
@@ -754,7 +751,6 @@ impl BoundingBoxTraitC<XYXYn> for XYXYnc {
         self.xyxyn.to_xywhnc(w, h, label)
     }
 
-    #[flutter_rust_bridge::frb(sync)]
     fn strlabel(&self) -> String {
         detection_label(&self.label, &self.xyxyn.prob)
     }
@@ -780,8 +776,7 @@ impl BoundingBoxTraitC<XYWH> for XYWHc {
     fn to_xywhnc(&self, w: Option<f32>, h: Option<f32>, label: String) -> XYWHnc {
         self.xywh.to_xywhnc(w, h, label)
     }
-
-    #[flutter_rust_bridge::frb(sync)]
+    
     fn strlabel(&self) -> String {
         detection_label(&self.label, &self.xywh.prob)
     }
@@ -808,13 +803,11 @@ impl BoundingBoxTraitC<XYWHn> for XYWHnc {
         self.xywhn.to_xywhnc(w, h, label)
     }
 
-    #[flutter_rust_bridge::frb(sync)]
     fn strlabel(&self) -> String {
         detection_label(&self.label, &self.xywhn.prob)
     }
 }
 
-#[flutter_rust_bridge::frb(sync)]
 pub fn get_ai_by_description(list_ais: &[AI], description: &str) -> AI {
     list_ais
         .iter()

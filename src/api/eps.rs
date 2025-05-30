@@ -57,7 +57,6 @@ pub fn get_ep_version(provider: &EP) -> f64 {
     }
 }
 
-#[flutter_rust_bridge::frb(sync)]
 pub fn get_ep_by_name(list_eps: &[EP], name: &str) -> EP {
     list_eps.iter().find(|ep| ep.name == name).unwrap().clone()
 }

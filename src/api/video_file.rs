@@ -69,7 +69,6 @@ pub fn get_output_path(file_path: &str) -> String {
 }
 
 impl VideofileProcessor {
-    #[flutter_rust_bridge::frb(sync)]
     pub fn new(file_path: &str) -> Self {
         video_rs::init().unwrap();
         let decoder = DecoderBuilder::new(Path::new(file_path)).build().unwrap();

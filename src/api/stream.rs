@@ -54,7 +54,6 @@ impl Iterator for VideoStream {
 }
 
 impl VideoStream {
-    #[flutter_rust_bridge::frb(sync)]
     pub fn new(path_or_url: &str) -> Self {
         // Initialize FFmpeg
         ffmpeg::init().unwrap();
