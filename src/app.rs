@@ -41,6 +41,7 @@ impl eframe::App for MainApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
+        egui_extras::install_image_loaders(ctx);
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
@@ -135,12 +136,7 @@ impl eframe::App for MainApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Image Preview");
-
-            ui.image(egui::include_image!("C:/Users/finxo/Desktop/boquilahub-egui/src/pudu.jpg"));
-            ui.add(
-                egui::Image::new(egui::include_image!("C:/Users/finxo/Desktop/boquilahub-egui/src/pudu.jpg")).corner_radius(5),
-            );
+            ui.image("https://i.pinimg.com/736x/a3/f5/d9/a3f5d95d519315eb158c867d7121dd3a.jpg");
         });
     }
 }
