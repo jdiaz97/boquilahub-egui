@@ -1,3 +1,6 @@
+use crate::api;
+use api::import::IMAGE_FORMATS;
+use api::import::VIDEO_FORMATS;
 use eframe::CreationContext;
 use egui::{Color32, ColorImage, ImageData, TextureHandle, TextureOptions};
 use image::{open, GenericImageView, Rgb, RgbImage}; // For dimensions()
@@ -24,7 +27,7 @@ impl MainApp {
             ai_selected: 0,
             ep_selected: 0,
             isapi_deployed: false,
-            isprocessing: false,            
+            isprocessing: false,
             selected_files: Vec::new(), // Add this
             screen_texture: None,
         }
@@ -116,41 +119,94 @@ impl eframe::App for MainApp {
                 .num_columns(2)
                 .spacing([10.0, 10.0])
                 .show(ui, |ui| {
-                    // Folder selection
+
+                    // FOLDER SELECTION SECTION
                     if ui
                         .add_sized([85.0, 40.0], egui::Button::new("Folder"))
                         .clicked()
                     {
-                        // Folder selection logic here
+                        match FileDialog::new().pick_folder() {
+                            Some(folder_path) => {
+                                // Read directory contents and filter for image files
+                                match fs::read_dir(&folder_path) {
+                                    Ok(entries) => {
+                                        let mut image_files = Vec::new();
+
+                                        for entry in entries {
+                                            if let Ok(entry) = entry {
+                                                let path = entry.path();
+
+                                                // Only process files (not subdirectories)
+                                                if path.is_file() {
+                                                    // Check if file extension matches IMAGE_FORMATS
+                                                    if let Some(extension) = path.extension() {
+                                                        if let Some(ext_str) = extension.to_str() {
+                                                            if IMAGE_FORMATS.iter().any(|&format| {
+                                                                ext_str.to_lowercase()
+                                                                    == format.to_lowercase()
+                                                            }) {
+                                                                image_files.push(path);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if !image_files.is_empty() {
+                                            // Set the first image as the screen texture
+                                            self.screen_texture = Some(file_path_to_texture(
+                                                image_files[0].clone(),
+                                                ctx,
+                                            ));
+                                            self.selected_files = image_files;
+                                        } else {
+                                            // Handle case where no image files were found
+                                            println!("No image files found in the selected folder");
+                                        }
+                                    }
+                                    Err(e) => {
+                                        println!("Error reading directory: {}", e);
+                                    }
+                                }
+                            }
+                            None => (), // No folder selected
+                        }
                     }
 
-                    // Image file selection
+                    // IMAGE FILE SELECTION SECTION
                     if ui
                         .add_sized([85.0, 40.0], egui::Button::new("Image"))
                         .clicked()
                     {
                         match FileDialog::new()
-                            .add_filter("Image", &["png", "jpg", "jpeg", "gif", "bmp"])
+                            .add_filter("Image", &IMAGE_FORMATS)
                             .pick_files()
                         {
                             Some(paths) => {
                                 self.screen_texture =
                                     Some(file_path_to_texture(paths[0].clone(), ctx));
                                 self.selected_files = paths;
-
-                                
                             }
                             _ => (), // no selection, do nothing
                         }
                     }
                     ui.end_row();
 
-                    // Video file selection
+                    // VIDEO FILE SELECTION SECTION
                     if ui
                         .add_sized([85.0, 40.0], egui::Button::new("Video"))
                         .clicked()
                     {
-                        // Video selection logic here
+                        match FileDialog::new()
+                            .add_filter("Video", &VIDEO_FORMATS)
+                            .pick_files()
+                        {
+                            Some(paths) => {
+                                todo!()
+                            }
+                            _ => (), // no selection, do nothing
+                        }
                     }
 
                     // Camera feed

@@ -1,6 +1,6 @@
 // First formats
 // then, some logic and checks
-const IMAGE_FORMATS: [&'static str; 24] = [
+pub const IMAGE_FORMATS: [&'static str; 24] = [
     "avif", // AV1 Image File Format
     "bmp",  // Bitmap Image File
     "dib",  // Device Independent Bitmap (BMP alternative)
@@ -27,7 +27,7 @@ const IMAGE_FORMATS: [&'static str; 24] = [
     "webp", // WebP
 ];
 
-const VIDEO_FORMATS: [&'static str; 35] = [
+pub const VIDEO_FORMATS: [&'static str; 35] = [
     "mp4",    // MPEG-4 Part 14
     "m4v",    // MPEG-4 Video
     "mkv",    // Matroska Video
