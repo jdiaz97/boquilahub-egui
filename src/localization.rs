@@ -17,6 +17,14 @@ pub enum Key {
     image,
     video_file,
     camera_feed,
+    about,
+    idiom,
+    models,
+    donate,
+    source_code,
+    analyze,
+    export,
+    analysis,
 }
 
 pub fn translate(key: Key, lang: &Lang) -> &'static str {
@@ -60,6 +68,38 @@ pub fn translate(key: Key, lang: &Lang) -> &'static str {
         Key::camera_feed => match lang {
             Lang::EN => "Feed",
             Lang::ES => "Cámara",
+        }
+        Key::about => match lang {
+            Lang::EN => "About",
+            Lang::ES => "Información",
+        }
+        Key::idiom => match lang {
+            Lang::EN => "Language",
+            Lang::ES => "Idioma",
+        }
+        Key::models => match lang {
+            Lang::EN => "Models",
+            Lang::ES => "Modelos",
+        }
+        Key::donate => match lang {
+            Lang::EN => "Donate",
+            Lang::ES => "Donar",
+        }
+        Key::source_code => match lang {
+            Lang::EN => "Source code",
+            Lang::ES => "Código fuente",
+        }
+        Key::analyze => match lang {
+            Lang::EN => "Analyze",
+            Lang::ES => "Analizar",
+        }
+        Key::export => match lang {
+            Lang::EN => "Export",
+            Lang::ES => "Exportar",
+        }
+        Key::analysis => match lang {
+            Lang::EN => "Analysis",
+            Lang::ES => "Análisis",
         }
     }
 }

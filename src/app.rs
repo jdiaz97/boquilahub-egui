@@ -4,7 +4,6 @@ use crate::api::abstractions::AI;
 use crate::api::bq::get_bqs;
 use api::import::IMAGE_FORMATS;
 use api::import::VIDEO_FORMATS;
-use eframe::CreationContext;
 use egui::{ColorImage, TextureHandle, TextureOptions};
 use rfd::FileDialog;
 use std::fs::{self};
@@ -34,7 +33,7 @@ impl MainApp {
             selected_files: Vec::new(), // Add this
             screen_texture: None,
             image_texture_n: 0,
-            lang: Lang::ES,
+            lang: Lang::EN,
             ais: get_bqs(),
         }
     }
@@ -55,16 +54,19 @@ impl eframe::App for MainApp {
             // The top panel is often a good place for a menu bar:
 
             egui::menu::bar(ui, |ui| {
-                ui.menu_button("About", |ui| {
+                ui.menu_button(self.t(Key::about), |ui| {
                     ui.hyperlink_to("Website", "https://boquila.org/en");
-                    ui.hyperlink_to("Donate", "https://boquila.org/donate");
-                    ui.hyperlink_to("Source code", "https://github.com/boquila/boquilahub/");
+                    ui.hyperlink_to(self.t(Key::donate), "https://boquila.org/donate");
+                    ui.hyperlink_to(
+                        self.t(Key::source_code),
+                        "https://github.com/boquila/boquilahub/",
+                    );
                 });
-                ui.menu_button("Models", |ui| {
+                ui.menu_button(self.t(Key::models), |ui| {
                     ui.hyperlink_to("Model HUB", "https://boquila.org/hub");
                 });
 
-                ui.menu_button("Language", |ui| {
+                ui.menu_button(self.t(Key::idiom), |ui| {
                     ui.radio_value(&mut self.lang, Lang::EN, "English");
                     ui.radio_value(&mut self.lang, Lang::ES, "Español");
                 });
@@ -74,14 +76,6 @@ impl eframe::App for MainApp {
         });
 
         egui::SidePanel::left("left_panel").show(ctx, |ui| {
-            // TODO: define at runtime
-            let ai_alternatives = [
-                "boquilanet-gen 0.1",
-                "boquilanet-cl 0.1",
-                "MDV6-yolov9-e-1280",
-            ];
-            let ep_alternatives = ["CPU", "CUDA", "Remote BoquilaHUB"];
-
             ui.vertical_centered(|ui| {
                 ui.heading(format!("💻 {}", self.t(Key::setup)));
             });
@@ -89,11 +83,6 @@ impl eframe::App for MainApp {
 
             ui.label(self.t(Key::select_ai));
 
-            let ai_alternatives = [
-                "boquilanet-gen 0.1",
-                "boquilanet-cl 0.1",
-                "MDV6-yolov9-e-1280",
-            ];
             egui::ComboBox::from_id_salt("AI").show_index(
                 ui,
                 &mut self.ai_selected,
@@ -102,6 +91,7 @@ impl eframe::App for MainApp {
             );
 
             ui.add_space(8.0);
+            let ep_alternatives = ["CPU", "CUDA", "Remote BoquilaHUB"];
             ui.label(self.t(Key::select_ep));
             egui::ComboBox::from_id_salt("EP").show_index(
                 ui,
@@ -112,11 +102,14 @@ impl eframe::App for MainApp {
 
             ui.add_space(8.0);
             ui.label("API ");
-            if ui.button(self.t(Key::deploy)).clicked() {
-                tokio::spawn(async {
-                    thread::sleep(Duration::from_secs(2));
-                });
-                self.isapi_deployed = true;
+
+            if !self.isapi_deployed {
+                if ui.button(self.t(Key::deploy)).clicked() {
+                    tokio::spawn(async {
+                        thread::sleep(Duration::from_secs(2));
+                    });
+                    self.isapi_deployed = true;
+                }
             }
 
             if self.isapi_deployed {
@@ -126,7 +119,7 @@ impl eframe::App for MainApp {
             ui.separator();
 
             ui.vertical_centered(|ui| {
-                ui.heading(format!("📋 {}", self.t(Key::select_your_data)));
+                ui.heading(format!("📎 {}", self.t(Key::select_your_data)));
             });
             ui.separator();
 
@@ -237,6 +230,35 @@ impl eframe::App for MainApp {
                         // Camera feed logic here
                     }
                 });
+
+            if self.selected_files.len() > 0 {
+                ui.separator();
+                ui.vertical_centered(|ui| {
+                    ui.heading(format!("📋 {}", self.t(Key::analysis)));
+                });
+                ui.separator();
+                // ANALYZE BUTTON SECTION
+
+                ui.vertical_centered(|ui| {
+                    if ui
+                        .add_sized([85.0, 40.0], egui::Button::new(self.t(Key::analyze)))
+                        .clicked()
+                    {
+                        // Analyze logic
+                    }
+                });
+
+                ui.add_space(8.0);
+
+                ui.vertical_centered(|ui| {
+                    if ui
+                        .add_sized([85.0, 40.0], egui::Button::new(self.t(Key::export)))
+                        .clicked()
+                    {
+                        // Analyze logic
+                    }
+                });
+            }
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
