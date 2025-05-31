@@ -1,14 +1,12 @@
+use super::localization::*;
 use crate::api;
 use api::import::IMAGE_FORMATS;
 use api::import::VIDEO_FORMATS;
 use eframe::CreationContext;
-use egui::{Color32, ColorImage, ImageData, TextureHandle, TextureOptions};
-use image::{open, GenericImageView, Rgb, RgbImage}; // For dimensions()
+use egui::{ColorImage, TextureHandle, TextureOptions};
 use rfd::FileDialog;
-use std::collections::HashMap;
-use std::fs::{self, File};
+use std::fs::{self};
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
@@ -19,6 +17,7 @@ pub struct MainApp {
     isprocessing: bool,
     selected_files: Vec<PathBuf>,
     screen_texture: Option<TextureHandle>,
+    lang: Lang,
 }
 
 impl MainApp {
@@ -30,7 +29,12 @@ impl MainApp {
             isprocessing: false,
             selected_files: Vec::new(), // Add this
             screen_texture: None,
+            lang: Lang::ES,
         }
+    }
+
+    pub fn t(&self, key: Key) -> &'static str {
+        translate(key, &self.lang)
     }
 }
 
@@ -54,6 +58,11 @@ impl eframe::App for MainApp {
                     ui.hyperlink_to("Model HUB", "https://boquila.org/hub");
                 });
 
+                ui.menu_button("Language", |ui| {
+                    ui.radio_value(&mut self.lang, Lang::EN, "English");
+                    ui.radio_value(&mut self.lang, Lang::ES, "Español");
+                });
+
                 egui::widgets::global_theme_preference_switch(ui);
             });
         });
@@ -68,11 +77,11 @@ impl eframe::App for MainApp {
             let ep_alternatives = ["CPU", "CUDA", "Remote BoquilaHUB"];
 
             ui.vertical_centered(|ui| {
-                ui.heading("💻 Setup");
+                ui.heading(format!("💻 {}", self.t(Key::setup)));
             });
             ui.separator();
 
-            ui.label("Select an AI ");
+            ui.label(self.t(Key::select_ai));
             egui::ComboBox::from_id_salt("AI").show_index(
                 ui,
                 &mut self.ai_selected,
@@ -81,7 +90,7 @@ impl eframe::App for MainApp {
             );
 
             ui.add_space(8.0);
-            ui.label("Select a processor");
+            ui.label(self.t(Key::select_ep));
             egui::ComboBox::from_id_salt("EP").show_index(
                 ui,
                 &mut self.ep_selected,
@@ -91,7 +100,7 @@ impl eframe::App for MainApp {
 
             ui.add_space(8.0);
             ui.label("API ");
-            if ui.button("Deploy").clicked() {
+            if ui.button(self.t(Key::deploy)).clicked() {
                 tokio::spawn(async {
                     thread::sleep(Duration::from_secs(2));
                 });
@@ -99,13 +108,13 @@ impl eframe::App for MainApp {
             }
 
             if self.isapi_deployed {
-                ui.label("API deployed");
+                ui.label(self.t(Key::deployed_api));
             }
 
             ui.separator();
 
             ui.vertical_centered(|ui| {
-                ui.heading("📋 Select your data");
+                ui.heading(format!("📋 {}", self.t(Key::select_your_data)));
             });
             ui.separator();
 
@@ -119,10 +128,9 @@ impl eframe::App for MainApp {
                 .num_columns(2)
                 .spacing([10.0, 10.0])
                 .show(ui, |ui| {
-
                     // FOLDER SELECTION SECTION
                     if ui
-                        .add_sized([85.0, 40.0], egui::Button::new("Folder"))
+                        .add_sized([85.0, 40.0], egui::Button::new(self.t(Key::folder)))
                         .clicked()
                     {
                         match FileDialog::new().pick_folder() {
@@ -176,7 +184,7 @@ impl eframe::App for MainApp {
 
                     // IMAGE FILE SELECTION SECTION
                     if ui
-                        .add_sized([85.0, 40.0], egui::Button::new("Image"))
+                        .add_sized([85.0, 40.0], egui::Button::new(self.t(Key::image)))
                         .clicked()
                     {
                         match FileDialog::new()
@@ -195,7 +203,7 @@ impl eframe::App for MainApp {
 
                     // VIDEO FILE SELECTION SECTION
                     if ui
-                        .add_sized([85.0, 40.0], egui::Button::new("Video"))
+                        .add_sized([85.0, 40.0], egui::Button::new(self.t(Key::video_file)))
                         .clicked()
                     {
                         match FileDialog::new()
@@ -211,7 +219,7 @@ impl eframe::App for MainApp {
 
                     // Camera feed
                     if ui
-                        .add_sized([85.0, 40.0], egui::Button::new("Feed"))
+                        .add_sized([85.0, 40.0], egui::Button::new(self.t(Key::camera_feed)))
                         .clicked()
                     {
                         // Camera feed logic here
