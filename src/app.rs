@@ -1,7 +1,11 @@
-use image::GenericImageView; // For dimensions()
+use eframe::CreationContext;
+use egui::{Color32, ColorImage, ImageData, TextureHandle, TextureOptions};
+use image::{open, GenericImageView, Rgb, RgbImage}; // For dimensions()
 use rfd::FileDialog;
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
@@ -10,33 +14,24 @@ pub struct MainApp {
     ep_selected: usize,
     isapi_deployed: bool,
     isprocessing: bool,
-    selected_file: Option<PathBuf>,
+    selected_files: Vec<PathBuf>,
+    screen_texture: Option<TextureHandle>,
 }
 
-impl Default for MainApp {
-    fn default() -> Self {
+impl MainApp {
+    pub fn new(cc: &CreationContext) -> Self {
         Self {
             ai_selected: 0,
             ep_selected: 0,
             isapi_deployed: false,
-            isprocessing: false,
-            selected_file: None,
+            isprocessing: false,            
+            selected_files: Vec::new(), // Add this
+            screen_texture: None,
         }
     }
 }
 
-impl MainApp {
-    pub fn new() -> Self {
-        Default::default()
-    }
-}
-
 impl eframe::App for MainApp {
-    /// Called by the frame work to save state before shutdown.
-    // fn save(&mut self, storage: &mut dyn eframe::Storage) {
-    //     eframe::set_value(storage, eframe::APP_KEY, self);
-    // }
-
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
@@ -72,7 +67,7 @@ impl eframe::App for MainApp {
             ui.vertical_centered(|ui| {
                 ui.heading("💻 Setup");
             });
-            ui.separator();            
+            ui.separator();
 
             ui.label("Select an AI ");
             egui::ComboBox::from_id_salt("AI").show_index(
@@ -134,12 +129,18 @@ impl eframe::App for MainApp {
                         .add_sized([85.0, 40.0], egui::Button::new("Image"))
                         .clicked()
                     {
-                        if let Some(path) = FileDialog::new()
-                            .add_filter("Image", &["png", "jpg", "jpeg"])
-                            .pick_file()
+                        match FileDialog::new()
+                            .add_filter("Image", &["png", "jpg", "jpeg", "gif", "bmp"])
+                            .pick_files()
                         {
-                            println!("Selected file: {:?}", path);
-                            self.selected_file = Some(path);
+                            Some(paths) => {
+                                self.screen_texture =
+                                    Some(file_path_to_texture(paths[0].clone(), ctx));
+                                self.selected_files = paths;
+
+                                
+                            }
+                            _ => (), // no selection, do nothing
                         }
                     }
                     ui.end_row();
@@ -163,7 +164,44 @@ impl eframe::App for MainApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.image("https://i.pinimg.com/736x/a3/f5/d9/a3f5d95d519315eb158c867d7121dd3a.jpg");
+            // ui.image("https://i.pinimg.com/736x/a3/f5/d9/a3f5d95d519315eb158c867d7121dd3a.jpg");
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                // This should obviously not be here, but it's just a test
+                match &self.screen_texture {
+                    Some(texture) => {
+                        ui.add(
+                            egui::Image::new(texture)
+                                .max_height(800.0)
+                                .corner_radius(10.0),
+                        );
+                    }
+                    None => {
+
+                        // no image is here to be deployed
+                    }
+                }
+            });
         });
     }
+}
+
+fn load_image_from_memory(image_data: &[u8]) -> Result<ColorImage, image::ImageError> {
+    let image = image::load_from_memory(image_data)?;
+    let size = [image.width() as _, image.height() as _];
+    let image_buffer = image.to_rgba8();
+    let pixels = image_buffer.as_flat_samples();
+    Ok(ColorImage::from_rgba_unmultiplied(size, pixels.as_slice()))
+}
+
+fn file_path_to_texture(path: PathBuf, ctx: &egui::Context) -> TextureHandle {
+    let a = fs::read(path).unwrap();
+    let b = load_image_from_memory(&a).unwrap();
+
+    let screen_texture = ctx.load_texture(
+        "current_img", // name for the texture
+        b,
+        TextureOptions::default(),
+    );
+
+    return screen_texture;
 }
