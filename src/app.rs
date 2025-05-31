@@ -264,7 +264,19 @@ impl eframe::App for MainApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             // ui.image("https://i.pinimg.com/736x/a3/f5/d9/a3f5d95d519315eb158c867d7121dd3a.jpg");
             egui::ScrollArea::vertical().show(ui, |ui| {
-                // This should obviously not be here, but it's just a test
+                if self.selected_files.len() > 1 {
+                    let response = ui.add(
+                        egui::Slider::new(&mut self.image_texture_n, 1..=self.selected_files.len())
+                            .text(""),
+                    );
+                    if response.changed() {
+                        self.screen_texture = Some(file_path_to_texture(
+                            self.selected_files[self.image_texture_n - 1].clone(),
+                            ctx,
+                        ));
+                    }
+                }
+
                 match &self.screen_texture {
                     Some(texture) => {
                         ui.add(
