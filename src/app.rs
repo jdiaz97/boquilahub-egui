@@ -1,5 +1,7 @@
 use super::localization::*;
 use crate::api;
+use crate::api::abstractions::AI;
+use crate::api::bq::get_bqs;
 use api::import::IMAGE_FORMATS;
 use api::import::VIDEO_FORMATS;
 use eframe::CreationContext;
@@ -14,22 +16,26 @@ pub struct MainApp {
     ai_selected: usize,
     ep_selected: usize,
     isapi_deployed: bool,
-    isprocessing: bool,
+    is_processing: bool,
     selected_files: Vec<PathBuf>,
     screen_texture: Option<TextureHandle>,
+    image_texture_n: usize,
     lang: Lang,
+    ais: Vec<AI>,
 }
 
 impl MainApp {
-    pub fn new(cc: &CreationContext) -> Self {
+    pub fn new() -> Self {
         Self {
             ai_selected: 0,
             ep_selected: 0,
             isapi_deployed: false,
-            isprocessing: false,
+            is_processing: false,
             selected_files: Vec::new(), // Add this
             screen_texture: None,
+            image_texture_n: 0,
             lang: Lang::ES,
+            ais: get_bqs(),
         }
     }
 
@@ -82,11 +88,17 @@ impl eframe::App for MainApp {
             ui.separator();
 
             ui.label(self.t(Key::select_ai));
+
+            let ai_alternatives = [
+                "boquilanet-gen 0.1",
+                "boquilanet-cl 0.1",
+                "MDV6-yolov9-e-1280",
+            ];
             egui::ComboBox::from_id_salt("AI").show_index(
                 ui,
                 &mut self.ai_selected,
-                ai_alternatives.len(),
-                |i| ai_alternatives[i],
+                self.ais.len(),
+                |i| self.ais[i].name.as_str(),
             );
 
             ui.add_space(8.0);

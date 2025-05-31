@@ -55,7 +55,7 @@ pub fn translate(key: Key, lang: &Lang) -> &'static str {
         }
         Key::video_file => match lang {
             Lang::EN => "Video",
-            Lang::ES => "vIDEO",
+            Lang::ES => "Video",
         }
         Key::camera_feed => match lang {
             Lang::EN => "Feed",

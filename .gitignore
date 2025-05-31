@@ -9,3 +9,4 @@ target
 target_ra
 target_wasm
 deps
+models
