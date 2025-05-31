@@ -4,8 +4,8 @@ version = "0.3.0"
 edition = "2021"
 
 [dependencies]
-egui = "0.30"
-eframe = { version = "0.30", default-features = false, features = [
+egui = "0.31.1"
+eframe = { version = "0.31.1", default-features = false, features = [
     "accesskit",     # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
     "default_fonts", # Embed the default egui fonts.
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
@@ -14,7 +14,7 @@ eframe = { version = "0.30", default-features = false, features = [
 ] }
 log = "0.4"
 ffmpeg-next = "7.1.0"
-image = "0.25.6"
+image = { version = "0.25.6", features = ["jpeg", "png"] } 
 ndarray = "0.16.1"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
@@ -31,6 +31,8 @@ imageproc = "0.25.0"
 ab_glyph = "0.2.29"
 pulp = "0.21.4"
 chrono = "0.4.41"
+rfd = "0.15.3"
+egui_extras = { version = "0.31.1", features = ["all_loaders"] }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

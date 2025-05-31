@@ -19,7 +19,7 @@ async fn main() -> eframe::Result {
     eframe::run_native(
         "BoquilaHUB",
         native_options,
-        Box::new(|cc| Ok(Box::new(boquilahub::MainApp::new(cc)))),
+        Box::new(|_cc| Ok(Box::new(boquilahub::MainApp::new()))),
     )
 }
 

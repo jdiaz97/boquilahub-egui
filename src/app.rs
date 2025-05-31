@@ -1,14 +1,16 @@
+use image::GenericImageView; // For dimensions()
+use rfd::FileDialog;
+use std::fs::{self, File};
+use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
-
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(default)] // if we add new fields, give them default values when deserializing old state
 
 pub struct MainApp {
     ai_selected: usize,
     ep_selected: usize,
     isapi_deployed: bool,
     isprocessing: bool,
+    selected_file: Option<PathBuf>,
 }
 
 impl Default for MainApp {
@@ -18,16 +20,13 @@ impl Default for MainApp {
             ep_selected: 0,
             isapi_deployed: false,
             isprocessing: false,
+            selected_file: None,
         }
     }
 }
 
 impl MainApp {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        if let Some(storage) = cc.storage {
-            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-        }
-
+    pub fn new() -> Self {
         Default::default()
     }
 }
@@ -54,8 +53,7 @@ impl eframe::App for MainApp {
                 });
                 ui.menu_button("Models", |ui| {
                     ui.hyperlink_to("Model HUB", "https://boquila.org/hub");
-                }); 
-                
+                });
 
                 egui::widgets::global_theme_preference_switch(ui);
             });
@@ -78,7 +76,7 @@ impl eframe::App for MainApp {
                 |i| ai_alternatives[i],
             );
 
-            ui.add_space(8.0);            
+            ui.add_space(8.0);
             ui.label("Select a processor");
             egui::ComboBox::from_id_salt("EP").show_index(
                 ui,
@@ -93,9 +91,9 @@ impl eframe::App for MainApp {
                 tokio::spawn(async {
                     // API deplyoing logic
                     // Placeholder
-                    thread::sleep(Duration::from_secs(2)); 
+                    thread::sleep(Duration::from_secs(2));
                     println!("time is done");
-                });   
+                });
                 println!("done");
                 self.isapi_deployed = true;
             }
@@ -106,9 +104,43 @@ impl eframe::App for MainApp {
 
             ui.separator();
 
+            // File selection logic
+            if ui.button("Select Image File").clicked() {
+                if let Some(path) = FileDialog::new()
+                    .add_filter("Image", &["png", "jpg", "jpeg"])
+                    .pick_file()
+                {
+                    println!("Selected file: {:?}", path);
+                    self.selected_file = Some(path.clone());
+
+                    // Load image and print dimensions
+                    match image::open(&path) {
+                        Ok(img) => {
+                            let (width, height) = img.dimensions();
+                            println!("Image size: {}x{}", width, height);
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to open image: {}", e);
+                        }
+                    }
+                }
+            }
+
+            if let Some(path) = &self.selected_file {
+                ui.label(format!("Selected file: {:?}", path.file_name().unwrap()));
+            }
+
+            ui.separator();
             ui.hyperlink_to("Source code", "https://github.com/boquila/boquilahub/");
         });
 
-        egui::CentralPanel::default().show(ctx, |ui| {});
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.heading("Image Preview");
+
+            ui.image(egui::include_image!("C:/Users/finxo/Desktop/boquilahub-egui/src/pudu.jpg"));
+            ui.add(
+                egui::Image::new(egui::include_image!("C:/Users/finxo/Desktop/boquilahub-egui/src/pudu.jpg")).corner_radius(5),
+            );
+        });
     }
 }
