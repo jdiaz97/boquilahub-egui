@@ -50,7 +50,7 @@ impl eframe::App for MainApp {
                 ui.menu_button("About", |ui| {
                     ui.hyperlink_to("Website", "https://boquila.org/en");
                     ui.hyperlink_to("Donate", "https://boquila.org/donate");
-                    ui.hyperlink_to("Model HUB", "https://boquila.org/hub");
+                    ui.hyperlink_to("Source code", "https://github.com/boquila/boquilahub/");
                 });
                 ui.menu_button("Models", |ui| {
                     ui.hyperlink_to("Model HUB", "https://boquila.org/hub");
@@ -68,6 +68,11 @@ impl eframe::App for MainApp {
                 "MDV6-yolov9-e-1280",
             ];
             let ep_alternatives = ["CPU", "CUDA", "Remote BoquilaHUB"];
+
+            ui.vertical_centered(|ui| {
+                ui.heading("💻 Setup");
+            });
+            ui.separator();            
 
             ui.label("Select an AI ");
             egui::ComboBox::from_id_salt("AI").show_index(
@@ -90,12 +95,8 @@ impl eframe::App for MainApp {
             ui.label("API ");
             if ui.button("Deploy").clicked() {
                 tokio::spawn(async {
-                    // API deplyoing logic
-                    // Placeholder
                     thread::sleep(Duration::from_secs(2));
-                    println!("time is done");
                 });
-                println!("done");
                 self.isapi_deployed = true;
             }
 
@@ -105,34 +106,60 @@ impl eframe::App for MainApp {
 
             ui.separator();
 
-            // File selection logic
-            if ui.button("Select Image File").clicked() {
-                if let Some(path) = FileDialog::new()
-                    .add_filter("Image", &["png", "jpg", "jpeg"])
-                    .pick_file()
-                {
-                    println!("Selected file: {:?}", path);
-                    self.selected_file = Some(path.clone());
+            ui.vertical_centered(|ui| {
+                ui.heading("📋 Select your data");
+            });
+            ui.separator();
 
-                    // Load image and print dimensions
-                    match image::open(&path) {
-                        Ok(img) => {
-                            let (width, height) = img.dimensions();
-                            println!("Image size: {}x{}", width, height);
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to open image: {}", e);
+            // File selection logic
+
+            // Option 1: Grid layout with consistent sizing and spacing
+            ui.spacing_mut().button_padding = egui::vec2(12.0, 8.0);
+            ui.spacing_mut().item_spacing = egui::vec2(8.0, 8.0);
+
+            egui::Grid::new("file_selection_grid")
+                .num_columns(2)
+                .spacing([10.0, 10.0])
+                .show(ui, |ui| {
+                    // Folder selection
+                    if ui
+                        .add_sized([85.0, 40.0], egui::Button::new("Folder"))
+                        .clicked()
+                    {
+                        // Folder selection logic here
+                    }
+
+                    // Image file selection
+                    if ui
+                        .add_sized([85.0, 40.0], egui::Button::new("Image"))
+                        .clicked()
+                    {
+                        if let Some(path) = FileDialog::new()
+                            .add_filter("Image", &["png", "jpg", "jpeg"])
+                            .pick_file()
+                        {
+                            println!("Selected file: {:?}", path);
+                            self.selected_file = Some(path);
                         }
                     }
-                }
-            }
+                    ui.end_row();
 
-            if let Some(path) = &self.selected_file {
-                ui.label(format!("Selected file: {:?}", path.file_name().unwrap()));
-            }
+                    // Video file selection
+                    if ui
+                        .add_sized([85.0, 40.0], egui::Button::new("Video"))
+                        .clicked()
+                    {
+                        // Video selection logic here
+                    }
 
-            ui.separator();
-            ui.hyperlink_to("Source code", "https://github.com/boquila/boquilahub/");
+                    // Camera feed
+                    if ui
+                        .add_sized([85.0, 40.0], egui::Button::new("Feed"))
+                        .clicked()
+                    {
+                        // Camera feed logic here
+                    }
+                });
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
