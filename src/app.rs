@@ -51,7 +51,7 @@ pub struct MainApp {
 
 impl MainApp {
     pub fn new() -> Self {
-        set_model("models/boquilanet-gen.bq".to_owned(), LIST_EPS[1].clone());
+        // set_model("models/boquilanet-gen.bq".to_owned(), LIST_EPS[1].clone());
         Self {
             ais: get_bqs(),
             selected_files: Vec::new(),
@@ -125,12 +125,15 @@ impl eframe::App for MainApp {
 
             ui.label(self.t(Key::select_ai));
 
-            egui::ComboBox::from_id_salt("AI").show_index(
-                ui,
-                &mut self.ai_selected,
-                self.ais.len(),
-                |i| self.ais[i].name.as_str(),
-            );
+            egui::ComboBox::from_id_salt("AI")
+                .selected_text(&self.ais[self.ai_selected].name)
+                .show_ui(ui, |ui| {
+                    for (i, ai) in self.ais.iter().enumerate() {
+                        ui.selectable_value(&mut self.ai_selected, i, &ai.name)
+                                            .on_hover_text(&ai.classes.join(", "));
+
+                    }
+                });
 
             ui.add_space(8.0);
             let ep_alternatives = ["CPU", "CUDA", "Remote BoquilaHUB"];
