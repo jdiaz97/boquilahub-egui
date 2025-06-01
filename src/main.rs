@@ -1,8 +1,13 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+use boquilahub::{api::rest::run_api, cli::{self, run_cli}};
+// hide console window on Windows in release
+use clap::{Arg, Command};
 
 // When compiling natively:
 #[tokio::main]
 async fn main() -> eframe::Result {
+    run_cli().await;
+
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([400.0, 300.0])
@@ -17,6 +22,6 @@ async fn main() -> eframe::Result {
     eframe::run_native(
         "BoquilaHUB",
         native_options,
-        Box::new(|cc| Ok(Box::new(boquilahub::MainApp::new()))),
+        Box::new(|_cc| Ok(Box::new(boquilahub::MainApp::new()))),
     )
 }

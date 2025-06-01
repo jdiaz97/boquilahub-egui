@@ -22,7 +22,6 @@ async fn root() -> &'static str {
     "BoquilaHUB Web API!"
 }
 
-#[tokio::main]
 pub async fn run_api() {
     let app: Router = Router::new()
         .route("/", get(root))

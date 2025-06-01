@@ -16,6 +16,10 @@ pub struct MainApp {
     ep_selected: usize,
     isapi_deployed: bool,
     is_processing: bool,
+    should_continue: bool, // manages pause
+    save_img_from_strema: bool,
+    error_ocurred: bool,
+    is_analysis_complete: bool,
     selected_files: Vec<PathBuf>,
     screen_texture: Option<TextureHandle>,
     image_texture_n: usize,
@@ -30,6 +34,10 @@ impl MainApp {
             ep_selected: 0,
             isapi_deployed: false,
             is_processing: false,
+            should_continue: true,
+            save_img_from_strema: false,
+            error_ocurred: false,
+            is_analysis_complete: false,
             selected_files: Vec::new(), // Add this
             screen_texture: None,
             image_texture_n: 0,
@@ -173,13 +181,10 @@ impl eframe::App for MainApp {
                                                 ctx,
                                             ));
                                             self.selected_files = image_files;
-                                        } else {
-                                            // Handle case where no image files were found
-                                            println!("No image files found in the selected folder");
-                                        }
+                                        } 
                                     }
                                     Err(e) => {
-                                        println!("Error reading directory: {}", e);
+                                        self.error_ocurred = true;
                                     }
                                 }
                             }
