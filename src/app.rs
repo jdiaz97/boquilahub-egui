@@ -57,7 +57,7 @@ pub struct MainApp {
 
 impl MainApp {
     pub fn new() -> Self {
-        // set_model("models/boquilanet-gen.bq".to_owned(), LIST_EPS[1].clone());
+        set_model("models/boquilanet-gen.bq".to_owned(), LIST_EPS[1].clone());
         Self {
             ais: get_bqs(),
             selected_files: Vec::new(),
