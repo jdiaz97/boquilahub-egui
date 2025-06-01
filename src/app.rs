@@ -125,17 +125,19 @@ impl eframe::App for MainApp {
 
             ui.label(self.t(Key::select_ai));
 
+            // AI Selection Widget
             egui::ComboBox::from_id_salt("AI")
                 .selected_text(&self.ais[self.ai_selected].name)
                 .show_ui(ui, |ui| {
                     for (i, ai) in self.ais.iter().enumerate() {
                         ui.selectable_value(&mut self.ai_selected, i, &ai.name)
-                                            .on_hover_text(&ai.classes.join(", "));
-
+                            .on_hover_text(&ai.classes.join(", "));
                     }
                 });
 
             ui.add_space(8.0);
+
+            // EP Selection Widget
             let ep_alternatives = ["CPU", "CUDA", "Remote BoquilaHUB"];
             ui.label(self.t(Key::select_ep));
             egui::ComboBox::from_id_salt("EP").show_index(
@@ -319,6 +321,7 @@ impl eframe::App for MainApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             // ui.image("https://i.pinimg.com/736x/a3/f5/d9/a3f5d95d519315eb158c867d7121dd3a.jpg");
             egui::ScrollArea::vertical().show(ui, |ui| {
+                ui.style_mut().spacing.slider_width = 300.0;
                 if self.selected_files.len() > 1 {
                     let response = ui.add(
                         egui::Slider::new(&mut self.image_texture_n, 1..=self.selected_files.len())
