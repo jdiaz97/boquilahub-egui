@@ -336,14 +336,6 @@ impl eframe::App for MainApp {
     }
 }
 
-fn load_image_from_memory(image_data: &[u8]) -> Result<ColorImage, image::ImageError> {
-    let image: image::DynamicImage = image::load_from_memory(image_data)?;
-    let size: [usize; 2] = [image.width() as _, image.height() as _];
-    let image_buffer: image::ImageBuffer<image::Rgba<u8>, Vec<u8>> = image.to_rgba8();
-    let pixels: image::FlatSamples<&[u8]> = image_buffer.as_flat_samples();
-    Ok(ColorImage::from_rgba_unmultiplied(size, pixels.as_slice()))
-}
-
 fn load_image_from_buffer_ref(
     image_buffer: &image::ImageBuffer<image::Rgba<u8>, Vec<u8>>,
 ) -> ColorImage {
@@ -352,33 +344,12 @@ fn load_image_from_buffer_ref(
     ColorImage::from_rgba_unmultiplied(size, pixels.as_slice())
 }
 
-fn file_path_to_texture(path: PathBuf, ctx: &egui::Context) -> TextureHandle {
-    let a = fs::read(path).unwrap();
-    return buf_to_texture(&a, ctx);
-}
-
-fn buf_to_texture(image_data: &[u8], ctx: &egui::Context) -> TextureHandle {
-    let b = load_image_from_memory(&image_data).unwrap();
-
-    let screen_texture = ctx.load_texture(
-        "current_img", // name for the texture
-        b,
-        TextureOptions::default(),
-    );
-
-    return screen_texture;
-}
-
 fn imgpred_to_texture(predimg: &PredImg, ctx: &egui::Context) -> TextureHandle {
-    if predimg.wasprocessed {
-        let a = fs::read(predimg.file_path.clone()).unwrap();
-        return buf_to_texture(&a, ctx);
+    let image_data = if predimg.wasprocessed {
+        load_image_from_buffer_ref(&predimg.draw2())
     } else {
-        let screen_texture = ctx.load_texture(
-            "current_img", // name for the texture
-            load_image_from_buffer_ref(&predimg.draw2()),
-            TextureOptions::default(),
-        );
-        return screen_texture
-    }
+        load_image_from_buffer_ref(&open(predimg.file_path.clone()).unwrap().into_rgba8())
+    };
+
+    ctx.load_texture("current_img", image_data, TextureOptions::default())
 }
