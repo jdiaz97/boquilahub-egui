@@ -1,10 +1,12 @@
 use super::localization::*;
 use crate::api;
+use crate::api::abstractions::PredImg;
 use crate::api::abstractions::AI;
 use crate::api::bq::get_bqs;
 use api::import::IMAGE_FORMATS;
 use api::import::VIDEO_FORMATS;
 use egui::{ColorImage, TextureHandle, TextureOptions};
+use image::open;
 use rfd::FileDialog;
 use std::fs::{self};
 use std::path::PathBuf;
@@ -12,37 +14,62 @@ use std::thread;
 use std::time::Duration;
 
 pub struct MainApp {
+    // Large types first (Vec, Option<PathBuf>, Option<String>)
+    ais: Vec<AI>,
+    selected_files: Vec<PredImg>,
+    video_file_path: Option<PathBuf>,
+    feed_url: Option<String>,
+
+    // Medium-sized types (TextureHandle options)
+    screen_texture: Option<TextureHandle>,
+    video_frame: Option<TextureHandle>,
+    feed_frame: Option<TextureHandle>,
+
+    // usize fields (8 bytes on 64-bit)
     ai_selected: usize,
     ep_selected: usize,
+    image_texture_n: usize,
+
+    // Option<usize> fields (likely 16 bytes due to Option overhead)
+    step_frame: Option<usize>,
+    total_frames: Option<usize>,
+    current_frame: Option<usize>,
+
+    // Enums
+    lang: Lang,
+
+    // Media State
     isapi_deployed: bool,
     is_processing: bool,
-    should_continue: bool, // manages pause
+    should_continue: bool,
     save_img_from_strema: bool,
     error_ocurred: bool,
     is_analysis_complete: bool,
-    selected_files: Vec<PathBuf>,
-    screen_texture: Option<TextureHandle>,
-    image_texture_n: usize,
-    lang: Lang,
-    ais: Vec<AI>,
 }
 
 impl MainApp {
     pub fn new() -> Self {
         Self {
+            ais: get_bqs(),
+            selected_files: Vec::new(),
+            video_file_path: None,
+            feed_url: None,
+            screen_texture: None,
+            video_frame: None,
+            feed_frame: None,
             ai_selected: 0,
             ep_selected: 0,
+            image_texture_n: 0,
+            step_frame: None,
+            total_frames: None,
+            current_frame: None,
+            lang: Lang::EN,
             isapi_deployed: false,
             is_processing: false,
             should_continue: true,
             save_img_from_strema: false,
             error_ocurred: false,
             is_analysis_complete: false,
-            selected_files: Vec::new(), // Add this
-            screen_texture: None,
-            image_texture_n: 0,
-            lang: Lang::EN,
-            ais: get_bqs(),
         }
     }
 
@@ -176,12 +203,18 @@ impl eframe::App for MainApp {
 
                                         if !image_files.is_empty() {
                                             // Set the first image as the screen texture
-                                            self.screen_texture = Some(file_path_to_texture(
-                                                image_files[0].clone(),
+                                            self.selected_files = image_files
+                                                .into_iter()
+                                                .map(|path| PredImg::new_simple(path))
+                                                .collect();
+
+                                            self.screen_texture = Some(imgpred_to_texture(
+                                                &self.selected_files[0],
                                                 ctx,
                                             ));
-                                            self.selected_files = image_files;
-                                        } 
+
+                                            // self.selected_files = image_files;
+                                        }
                                     }
                                     Err(e) => {
                                         self.error_ocurred = true;
@@ -202,9 +235,12 @@ impl eframe::App for MainApp {
                             .pick_files()
                         {
                             Some(paths) => {
+                                self.selected_files = paths
+                                    .into_iter()
+                                    .map(|path| PredImg::new_simple(path))
+                                    .collect();
                                 self.screen_texture =
-                                    Some(file_path_to_texture(paths[0].clone(), ctx));
-                                self.selected_files = paths;
+                                    Some(imgpred_to_texture(&self.selected_files[0], ctx));
                             }
                             _ => (), // no selection, do nothing
                         }
@@ -275,8 +311,8 @@ impl eframe::App for MainApp {
                             .text(""),
                     );
                     if response.changed() {
-                        self.screen_texture = Some(file_path_to_texture(
-                            self.selected_files[self.image_texture_n - 1].clone(),
+                        self.screen_texture = Some(imgpred_to_texture(
+                            &self.selected_files[self.image_texture_n - 1],
                             ctx,
                         ));
                     }
@@ -301,16 +337,28 @@ impl eframe::App for MainApp {
 }
 
 fn load_image_from_memory(image_data: &[u8]) -> Result<ColorImage, image::ImageError> {
-    let image = image::load_from_memory(image_data)?;
-    let size = [image.width() as _, image.height() as _];
-    let image_buffer = image.to_rgba8();
-    let pixels = image_buffer.as_flat_samples();
+    let image: image::DynamicImage = image::load_from_memory(image_data)?;
+    let size: [usize; 2] = [image.width() as _, image.height() as _];
+    let image_buffer: image::ImageBuffer<image::Rgba<u8>, Vec<u8>> = image.to_rgba8();
+    let pixels: image::FlatSamples<&[u8]> = image_buffer.as_flat_samples();
     Ok(ColorImage::from_rgba_unmultiplied(size, pixels.as_slice()))
+}
+
+fn load_image_from_buffer_ref(
+    image_buffer: &image::ImageBuffer<image::Rgba<u8>, Vec<u8>>,
+) -> ColorImage {
+    let size: [usize; 2] = [image_buffer.width() as _, image_buffer.height() as _];
+    let pixels: image::FlatSamples<&[u8]> = image_buffer.as_flat_samples();
+    ColorImage::from_rgba_unmultiplied(size, pixels.as_slice())
 }
 
 fn file_path_to_texture(path: PathBuf, ctx: &egui::Context) -> TextureHandle {
     let a = fs::read(path).unwrap();
-    let b = load_image_from_memory(&a).unwrap();
+    return buf_to_texture(&a, ctx);
+}
+
+fn buf_to_texture(image_data: &[u8], ctx: &egui::Context) -> TextureHandle {
+    let b = load_image_from_memory(&image_data).unwrap();
 
     let screen_texture = ctx.load_texture(
         "current_img", // name for the texture
@@ -319,4 +367,18 @@ fn file_path_to_texture(path: PathBuf, ctx: &egui::Context) -> TextureHandle {
     );
 
     return screen_texture;
+}
+
+fn imgpred_to_texture(predimg: &PredImg, ctx: &egui::Context) -> TextureHandle {
+    if predimg.wasprocessed {
+        let a = fs::read(predimg.file_path.clone()).unwrap();
+        return buf_to_texture(&a, ctx);
+    } else {
+        let screen_texture = ctx.load_texture(
+            "current_img", // name for the texture
+            load_image_from_buffer_ref(&predimg.draw2()),
+            TextureOptions::default(),
+        );
+        return screen_texture
+    }
 }

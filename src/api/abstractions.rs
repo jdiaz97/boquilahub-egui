@@ -1,6 +1,9 @@
 // The idea is to have the core funcionality that will alow us to do everything we need in the app
 // but also, enough abstractions so we can experiment and build more complex tools in the future
 #![allow(dead_code)]
+use std::path::PathBuf;
+
+use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 
 /// Probabilities in the YOLO format
@@ -613,16 +616,40 @@ impl AI {
 }
 
 pub struct PredImg {
-    pub file_path: String,
+    pub file_path: PathBuf,
     pub list_bbox: Vec<XYXYc>,
     pub wasprocessed: bool,
 }
 
 impl PredImg {
+    pub fn new(file_path: PathBuf, list_bbox: Vec<XYXYc>, wasprocessed: bool) -> Self {
+        PredImg {
+            file_path,
+            list_bbox,
+            wasprocessed,
+        }
+    }
+
+    // Simple constructor: only file_path is provided
+    pub fn new_simple(file_path: PathBuf) -> Self {
+        PredImg {
+            file_path,
+            list_bbox: Vec::new(),
+            wasprocessed: false,
+        }
+    }
+    
     pub fn draw(&self) -> Vec<u8> {
-        let mut img = image::open(self.file_path.clone()).unwrap().into_rgb8();
+        let mut img = image::open(&self.file_path).unwrap().into_rgb8();
         super::render::draw_bbox_from_imgbuf(&mut img, &self.list_bbox);
         return super::utils::image_buffer_to_jpg_buffer(img);
+    }
+
+    pub fn draw2(&self) -> image::ImageBuffer<image::Rgba<u8>, Vec<u8>> {
+        let mut img= image::open(&self.file_path).unwrap().into_rgb8();
+        super::render::draw_bbox_from_imgbuf(&mut img, &self.list_bbox);
+        return DynamicImage::ImageRgb8(img).to_rgba8();
+        // return img
     }
 
     pub fn save(&self) {

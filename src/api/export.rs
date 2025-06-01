@@ -17,7 +17,7 @@ pub fn write_csv(pred_imgs: Vec<PredImg>, output_path: &str) -> io::Result<()> {
     for pred_img in pred_imgs {
         for bbox in pred_img.list_bbox {
             wtr.write_record(&[
-                pred_img.file_path.clone(),
+                pred_img.file_path.to_string_lossy().into_owned(),
                 bbox.xyxy.x1.to_string(),
                 bbox.xyxy.y1.to_string(),
                 bbox.xyxy.x2.to_string(),
@@ -62,7 +62,7 @@ pub fn write_csv2(pred_imgs: Vec<PredImg>, output_path: &str) -> io::Result<()> 
         // Write a row for the predicted image, including the count of bounding boxes
         // and the unique labels.
         wtr.write_record(&[
-            &pred_img.file_path,
+            &pred_img.file_path.to_string_lossy().into_owned(),
             &bbox_rows.len().to_string(),
             &labels.into_iter().collect::<Vec<String>>().join(", "),
         ])?;
