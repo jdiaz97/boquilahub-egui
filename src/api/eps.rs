@@ -5,17 +5,17 @@ use std::str;
 
 #[derive(Clone)]
 pub struct EP {
-    pub name: String,
-    pub img_path: String,
+    pub name: &'static str,
+    pub img_path: &'static str,
     pub version: f32,
     pub local: bool,
-    pub dependencies: String,
+    pub dependencies: &'static str,
 }
 
 pub const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 pub fn get_ep_version(provider: &EP) -> f64 {
-    match provider.name.as_str() {
+    match provider.name {
         "CUDA" => {
             let output = Command::new("nvcc")
                 .args(["--version"])
@@ -60,3 +60,27 @@ pub fn get_ep_version(provider: &EP) -> f64 {
 pub fn get_ep_by_name(list_eps: &[EP], name: &str) -> EP {
     list_eps.iter().find(|ep| ep.name == name).unwrap().clone()
 }
+
+pub static LIST_EPS: &[EP] = &[
+    EP {
+        name: "CPU",
+        img_path: "tiny_cpu.png",
+        version: 0.0,
+        local: true,
+        dependencies: "none",
+    },
+    EP {
+        name: "CUDA",
+        img_path: "tiny_nvidia.png",
+        version: 12.4,
+        local: true,
+        dependencies: "cuDNN",
+    },
+    EP {
+        name: "BoquilaHUB Remoto",
+        img_path: "tiny_boquila.png",
+        version: 0.0,
+        local: false,
+        dependencies: "none",
+    },
+];

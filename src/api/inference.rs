@@ -16,8 +16,6 @@ pub fn init_app() {
 
 // Lazily initialized global variables for the MODEL
 static CURRENT_AI: Lazy<Mutex<Yolo>> = Lazy::new(|| Mutex::new(Yolo::default())); //
-static IOU_THRESHOLD: Lazy<Mutex<f32>> = Lazy::new(|| Mutex::new(0.7));
-static MIN_PROB: Lazy<Mutex<f32>> = Lazy::new(|| Mutex::new(0.45));
 
 fn import_model(model_data: &Vec<u8>, ep: EP) -> Session {
     if ep.name == "CUDA" {
