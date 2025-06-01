@@ -73,7 +73,7 @@ pub struct XYXYn {
     pub class_id: u16,
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub struct XYXY {
     pub x1: f32,
     pub y1: f32,
@@ -693,7 +693,7 @@ impl PredImg {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct XYXYc {
     pub xyxy: XYXY,
     pub label: String,

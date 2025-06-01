@@ -3,6 +3,8 @@ use crate::api;
 use crate::api::abstractions::PredImg;
 use crate::api::abstractions::AI;
 use crate::api::bq::get_bqs;
+use crate::api::eps::LIST_EPS;
+use crate::api::inference::*;
 use api::import::IMAGE_FORMATS;
 use api::import::VIDEO_FORMATS;
 use egui::{ColorImage, TextureHandle, TextureOptions};
@@ -49,6 +51,7 @@ pub struct MainApp {
 
 impl MainApp {
     pub fn new() -> Self {
+        set_model("models/boquilanet-gen.bq".to_owned(), LIST_EPS[1].clone());
         Self {
             ais: get_bqs(),
             selected_files: Vec::new(),
@@ -75,6 +78,10 @@ impl MainApp {
 
     pub fn t(&self, key: Key) -> &'static str {
         translate(key, &self.lang)
+    }
+
+    pub fn paint(&mut self, ctx: &egui::Context, i: usize) {
+        self.screen_texture = Some(imgpred_to_texture(&self.selected_files[i], ctx))
     }
 }
 
@@ -208,10 +215,7 @@ impl eframe::App for MainApp {
                                                 .map(|path| PredImg::new_simple(path))
                                                 .collect();
 
-                                            self.screen_texture = Some(imgpred_to_texture(
-                                                &self.selected_files[0],
-                                                ctx,
-                                            ));
+                                            self.paint(ctx, 0);
 
                                             // self.selected_files = image_files;
                                         }
@@ -239,8 +243,7 @@ impl eframe::App for MainApp {
                                     .into_iter()
                                     .map(|path| PredImg::new_simple(path))
                                     .collect();
-                                self.screen_texture =
-                                    Some(imgpred_to_texture(&self.selected_files[0], ctx));
+                                self.paint(ctx, 0)
                             }
                             _ => (), // no selection, do nothing
                         }
@@ -278,14 +281,22 @@ impl eframe::App for MainApp {
                     ui.heading(format!("📋 {}", self.t(Key::analysis)));
                 });
                 ui.separator();
-                // ANALYZE BUTTON SECTION
 
+                // ANALYZE BUTTON SECTION
                 ui.vertical_centered(|ui| {
                     if ui
                         .add_sized([85.0, 40.0], egui::Button::new(self.t(Key::analyze)))
                         .clicked()
                     {
-                        // Analyze logic
+                        for i in 0..self.selected_files.len() {
+                            let d =
+                                detect_bbox(&self.selected_files[i].file_path.to_str().unwrap());
+                            self.selected_files[i].list_bbox = d;
+                            self.selected_files[i].wasprocessed = true;
+                            if i == self.image_texture_n {
+                                self.paint(ctx, i)
+                            }
+                        }
                     }
                 });
 
@@ -311,13 +322,11 @@ impl eframe::App for MainApp {
                             .text(""),
                     );
                     if response.changed() {
-                        self.screen_texture = Some(imgpred_to_texture(
-                            &self.selected_files[self.image_texture_n - 1],
-                            ctx,
-                        ));
+                        self.paint(ctx, self.image_texture_n - 1);
                     }
                 }
 
+                // If any textuure has been defined, we render it
                 match &self.screen_texture {
                     Some(texture) => {
                         ui.add(
@@ -326,10 +335,7 @@ impl eframe::App for MainApp {
                                 .corner_radius(10.0),
                         );
                     }
-                    None => {
-
-                        // no image is here to be deployed
-                    }
+                    None => {}
                 }
             });
         });
