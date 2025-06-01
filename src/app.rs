@@ -24,6 +24,7 @@ pub struct MainApp {
     video_file_path: Option<PathBuf>,
     feed_url: Option<String>,
     processing_receiver: Option<tokio::sync::mpsc::UnboundedReceiver<(usize, Vec<XYXYc>)>>,
+    cancel_sender: Option<tokio::sync::oneshot::Sender<()>>,
 
     // Medium-sized types (TextureHandle options)
     screen_texture: Option<TextureHandle>,
@@ -63,12 +64,13 @@ impl MainApp {
             video_file_path: None,
             feed_url: None,
             processing_receiver: None,
+            cancel_sender: None,
             screen_texture: None,
             video_frame: None,
             feed_frame: None,
             ai_selected: 0,
             ep_selected: 0,
-            image_texture_n: 0,
+            image_texture_n: 1, // this starts at 1
             step_frame: None,
             total_frames: None,
             current_frame: None,
@@ -295,34 +297,58 @@ impl eframe::App for MainApp {
                 ui.separator();
 
                 // ANALYZE BUTTON SECTION
-                if ui
-                    .add_sized([85.0, 40.0], egui::Button::new(self.t(Key::analyze)))
-                    .clicked()
-                    && self.processing_receiver.is_none()
-                {
-                    self.should_continue = true;
-                    self.is_processing = true;
+                ui.vertical_centered(|ui| {
+                    if ui
+                        .add_sized([85.0, 40.0], egui::Button::new(self.t(Key::analyze)))
+                        .clicked()
+                        && self.processing_receiver.is_none()
+                    {
+                        self.should_continue = true;
+                        self.is_processing = true;
 
-                    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-                    self.processing_receiver = Some(rx);
+                        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+                        self.processing_receiver = Some(rx);
 
-                    let file_paths: Vec<_> = self
-                        .selected_files
-                        .iter()
-                        .map(|f| f.file_path.to_str().unwrap().to_string())
-                        .collect();
-                    tokio::spawn(async move {
-                        for (i, path) in file_paths.iter().enumerate() {
-                            let path = path.clone();
-                            let bbox = tokio::task::spawn_blocking(move || detect_bbox(&path))
-                                .await
-                                .unwrap();
-                            if tx.send((i, bbox)).is_err() {
-                                break;
+                        let file_paths: Vec<_> = self
+                            .selected_files
+                            .iter()
+                            .map(|f| f.file_path.to_str().unwrap().to_string())
+                            .collect();
+                        let (cancel_tx, mut cancel_rx) = tokio::sync::oneshot::channel();
+                        self.cancel_sender = Some(cancel_tx);
+
+                        tokio::spawn(async move {
+                            for (i, path) in file_paths.iter().enumerate() {
+                                // CHECK FOR CANCELLATION HERE
+                                if cancel_rx.try_recv().is_ok() {
+                                    break;
+                                }
+
+                                let path = path.clone();
+                                let bbox = tokio::task::spawn_blocking(move || detect_bbox(&path))
+                                    .await
+                                    .unwrap();
+                                if tx.send((i, bbox)).is_err() {
+                                    break;
+                                }
                             }
-                        }
-                    });
-                }
+                        });
+                    }
+
+                    if self.is_processing {
+   if ui
+       .add_sized([85.0, 40.0], egui::Button::new("Cancel"))
+       .clicked()
+   {
+       self.should_continue = false;
+       if let Some(cancel_tx) = self.cancel_sender.take() {
+           let _ = cancel_tx.send(());
+       }
+       self.is_processing = false;
+       self.processing_receiver = None;
+   }
+}
+                });
 
                 // Handle results
                 if let Some(rx) = &mut self.processing_receiver {
@@ -334,8 +360,8 @@ impl eframe::App for MainApp {
                     for (i, bbox) in updates {
                         self.selected_files[i].list_bbox = bbox;
                         self.selected_files[i].wasprocessed = true;
-                        if i == self.image_texture_n {
-                            self.paint(ctx, i - 1);
+                        if i == self.image_texture_n - 1 {
+                            self.paint(ctx, i);
                         }
                     }
 
@@ -351,7 +377,7 @@ impl eframe::App for MainApp {
                     ui.add(
                         egui::ProgressBar::new(self.progress_bar)
                             .show_percentage()
-                            .animate(true),
+                            .animate(self.is_processing),
                     );
                 }
 
