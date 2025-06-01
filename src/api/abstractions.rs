@@ -638,7 +638,7 @@ impl PredImg {
             wasprocessed: false,
         }
     }
-    
+
     pub fn draw(&self) -> Vec<u8> {
         let mut img = image::open(&self.file_path).unwrap().into_rgb8();
         super::render::draw_bbox_from_imgbuf(&mut img, &self.list_bbox);
@@ -646,7 +646,7 @@ impl PredImg {
     }
 
     pub fn draw2(&self) -> image::ImageBuffer<image::Rgba<u8>, Vec<u8>> {
-        let mut img= image::open(&self.file_path).unwrap().into_rgb8();
+        let mut img = image::open(&self.file_path).unwrap().into_rgb8();
         super::render::draw_bbox_from_imgbuf(&mut img, &self.list_bbox);
         return DynamicImage::ImageRgb8(img).to_rgba8();
         // return img
@@ -654,42 +654,55 @@ impl PredImg {
 
     pub fn save(&self) {
         if self.wasprocessed {
+            let jpg_data = &self.draw();
+            let filename = &self.file_path;
+            let path = std::path::Path::new(filename);
 
-        
-        let jpg_data = &self.draw();
-        let filename = &self.file_path;
-        let path = std::path::Path::new(filename);
-        
-        // Create export directory if it doesn't exist
-        std::fs::create_dir_all("export").unwrap_or_else(|e| {
-            eprintln!("Failed to create export directory: {}", e);
-        });
-        
-        // Extract file name component
-        let file_stem = path.file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("unnamed");
-            
-        let extension = path.extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("");
-        
-        // Construct new path with "exported_" prefix
-        let mut new_path = std::path::PathBuf::from("export");
-        new_path.push(format!("exported_{}", file_stem));
-        
-        // Add extension if it exists
-        if !extension.is_empty() {
-            new_path.set_extension(extension);
+            // Create export directory if it doesn't exist
+            std::fs::create_dir_all("export").unwrap_or_else(|e| {
+                eprintln!("Failed to create export directory: {}", e);
+            });
+
+            // Extract file name component
+            let file_stem = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("unnamed");
+
+            let extension = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+
+            // Construct new path with "exported_" prefix
+            let mut new_path = std::path::PathBuf::from("export");
+            new_path.push(format!("exported_{}", file_stem));
+
+            // Add extension if it exists
+            if !extension.is_empty() {
+                new_path.set_extension(extension);
+            }
+
+            let filepath = new_path
+                .to_str()
+                .unwrap_or("export/exported_file")
+                .to_string();
+
+            let mut file = std::fs::File::create(filepath).unwrap();
+            std::io::Write::write_all(&mut file, &jpg_data).unwrap();
         }
-        
-        let filepath = new_path.to_str()
-            .unwrap_or("export/exported_file")
-            .to_string();
-
-        let mut file = std::fs::File::create(filepath).unwrap();
-        std::io::Write::write_all(&mut file, &jpg_data).unwrap();    
     }
+}
+
+pub trait PredImgSugar {
+    fn count_processed_images(&self) -> usize;
+    fn get_progress(&self) -> f32;
+}
+
+impl PredImgSugar for Vec<PredImg> {
+    fn count_processed_images(&self) -> usize {
+        self.iter().filter(|img| img.wasprocessed).count()
+    }
+    fn get_progress(&self) -> f32 {
+        let scalar = self.count_processed_images();
+        return scalar as f32 / self.len() as f32;
     }
 }
 
@@ -801,7 +814,7 @@ impl BoundingBoxTraitC<XYWH> for XYWHc {
     fn to_xywhnc(&self, w: Option<f32>, h: Option<f32>, label: String) -> XYWHnc {
         self.xywh.to_xywhnc(w, h, label)
     }
-    
+
     fn strlabel(&self) -> String {
         detection_label(&self.label, &self.xywh.prob)
     }

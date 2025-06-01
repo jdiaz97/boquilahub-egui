@@ -1,6 +1,8 @@
 use super::localization::*;
 use crate::api;
 use crate::api::abstractions::PredImg;
+use crate::api::abstractions::PredImgSugar;
+use crate::api::abstractions::XYXYc;
 use crate::api::abstractions::AI;
 use crate::api::bq::get_bqs;
 use crate::api::eps::LIST_EPS;
@@ -21,6 +23,7 @@ pub struct MainApp {
     selected_files: Vec<PredImg>,
     video_file_path: Option<PathBuf>,
     feed_url: Option<String>,
+    processing_receiver: Option<tokio::sync::mpsc::UnboundedReceiver<(usize, Vec<XYXYc>)>>,
 
     // Medium-sized types (TextureHandle options)
     screen_texture: Option<TextureHandle>,
@@ -36,6 +39,8 @@ pub struct MainApp {
     step_frame: Option<usize>,
     total_frames: Option<usize>,
     current_frame: Option<usize>,
+
+    progress_bar: f32,
 
     // Enums
     lang: Lang,
@@ -57,6 +62,7 @@ impl MainApp {
             selected_files: Vec::new(),
             video_file_path: None,
             feed_url: None,
+            processing_receiver: None,
             screen_texture: None,
             video_frame: None,
             feed_frame: None,
@@ -66,6 +72,7 @@ impl MainApp {
             step_frame: None,
             total_frames: None,
             current_frame: None,
+            progress_bar: 0.0,
             lang: Lang::EN,
             isapi_deployed: false,
             is_processing: false,
@@ -288,22 +295,65 @@ impl eframe::App for MainApp {
                 ui.separator();
 
                 // ANALYZE BUTTON SECTION
-                ui.vertical_centered(|ui| {
-                    if ui
-                        .add_sized([85.0, 40.0], egui::Button::new(self.t(Key::analyze)))
-                        .clicked()
-                    {
-                        for i in 0..self.selected_files.len() {
-                            let d =
-                                detect_bbox(&self.selected_files[i].file_path.to_str().unwrap());
-                            self.selected_files[i].list_bbox = d;
-                            self.selected_files[i].wasprocessed = true;
-                            if i == self.image_texture_n {
-                                self.paint(ctx, i)
+                if ui
+                    .add_sized([85.0, 40.0], egui::Button::new(self.t(Key::analyze)))
+                    .clicked()
+                    && self.processing_receiver.is_none()
+                {
+                    self.should_continue = true;
+                    self.is_processing = true;
+
+                    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+                    self.processing_receiver = Some(rx);
+
+                    let file_paths: Vec<_> = self
+                        .selected_files
+                        .iter()
+                        .map(|f| f.file_path.to_str().unwrap().to_string())
+                        .collect();
+                    tokio::spawn(async move {
+                        for (i, path) in file_paths.iter().enumerate() {
+                            let path = path.clone();
+                            let bbox = tokio::task::spawn_blocking(move || detect_bbox(&path))
+                                .await
+                                .unwrap();
+                            if tx.send((i, bbox)).is_err() {
+                                break;
                             }
                         }
+                    });
+                }
+
+                // Handle results
+                if let Some(rx) = &mut self.processing_receiver {
+                    let mut updates = Vec::new();
+                    while let Ok((i, bbox)) = rx.try_recv() {
+                        updates.push((i, bbox));
                     }
-                });
+
+                    for (i, bbox) in updates {
+                        self.selected_files[i].list_bbox = bbox;
+                        self.selected_files[i].wasprocessed = true;
+                        if i == self.image_texture_n {
+                            self.paint(ctx, i - 1);
+                        }
+                    }
+
+                    if self.selected_files.iter().all(|f| f.wasprocessed) {
+                        self.is_processing = false;
+                        self.processing_receiver = None;
+                    }
+                    self.progress_bar = self.selected_files.get_progress();
+                    ctx.request_repaint();
+                }
+
+                if self.selected_files.len() > 0 {
+                    ui.add(
+                        egui::ProgressBar::new(self.progress_bar)
+                            .show_percentage()
+                            .animate(true),
+                    );
+                }
 
                 ui.add_space(8.0);
 
@@ -312,7 +362,7 @@ impl eframe::App for MainApp {
                         .add_sized([85.0, 40.0], egui::Button::new(self.t(Key::export)))
                         .clicked()
                     {
-                        // Analyze logic
+                        // EXPORT logic
                     }
                 });
             }
